@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kart Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kart Tracker">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#12161b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#eceef0;--fg:#12161b;--card:#fff;--mut:#5f6b78;--line:#d6dbe0;--acc:#d92d20;--go:#0b8a4b;--amb:#d99a1e;--plate:#fff;--platefg:#12161b;--hl:#fff1cc;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1114;--fg:#eef1f4;--card:#171b20;--mut:#93a0ad;--line:#2a3138;--acc:#ff5a4d;--go:#2fb36b;--amb:#d99a1e;--plate:#eef1f4;--platefg:#0e1114;--hl:#3a3112;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1114;--fg:#eef1f4;--card:#171b20;--mut:#93a0ad;--line:#2a3138;--acc:#ff5a4d;--go:#2fb36b;--amb:#d99a1e;--plate:#eef1f4;--platefg:#0e1114;--hl:#3a3112;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0 auto;background:var(--bg);color:var(--fg);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:12px 12px 40px;max-width:900px;overscroll-behavior-y:contain;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+button,.lane{touch-action:manipulation}
+#off{text-align:center;margin:10px 0 0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+h1,h2,.num{font-family:"Avenir Next Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:700}
+h1{font-size:30px;margin:6px 0 4px}
+h2{font-size:21px;margin:18px 0 8px}
+.sub{color:var(--mut);margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.grow{flex:1;min-width:0}
+.meta{font-size:13px;color:var(--mut);line-height:1.25}
+.tag{font-size:12px;font-weight:700}
+.r-good{color:var(--go);font-weight:700}.r-avg{color:#b7791f;font-weight:700}.r-rubbish{color:var(--acc);font-weight:700}.r-elon{color:#8b5cf6;font-weight:700}
+.plate{min-width:48px;text-align:center;background:var(--plate);color:var(--platefg);font-size:28px;line-height:1;padding:7px 4px;border-radius:7px;border:2px solid var(--fg)}
+.plate.sm{min-width:36px;font-size:20px;padding:4px 3px}
+.plate.good,.tile.good{background:var(--go);border-color:var(--go);color:#fff}
+.plate.avg,.tile.avg{background:var(--amb);border-color:var(--amb);color:#12161b}
+.plate.rubbish,.tile.rubbish{background:var(--acc);border-color:var(--acc);color:#fff}
+.plate.elon,.tile.elon{background:#7c3aed;border-color:#7c3aed;color:#fff}
+button,input{font:inherit;color:var(--fg)}
+button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 14px;min-height:46px;cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+button:focus-visible,.lane:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.stick{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;margin:0 -12px;padding:6px 12px;background:var(--bg)}
+.ban{background:var(--card);border-left:6px solid var(--mut);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.ban.ok{border-left-color:var(--go)}
+.ban.pick{border-left-color:var(--acc);background:var(--hl)}
+.ban button{min-height:38px;padding:4px 12px}
+.lanes{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}
+.lane h3{margin:0 0 8px;font-size:15px;color:var(--mut);font-weight:600}
+.lane.target{border:3px solid var(--acc);cursor:pointer}
+.next{display:flex;gap:10px;align-items:center}
+.then{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.here{margin-top:10px;text-align:center;background:var(--acc);color:#fff;border-radius:8px;padding:8px;font-weight:700}
+.teams{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.tm{display:flex;align-items:center;gap:10px;text-align:left;padding:8px 10px;min-height:64px}
+.tm.on{border:3px solid var(--acc);background:var(--hl)}
+.bar{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
+.grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(76px,1fr))}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:96px;padding:6px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--fg)}
+.tile .num{font-size:36px;line-height:1}
+.tile small{font-size:12px;opacity:.9}
+.legend{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.chip{padding:4px 10px;border-radius:99px;font-size:13px;font-weight:600;border:2px solid var(--line)}
+.chip.good{background:var(--go);border-color:var(--go);color:#fff}.chip.avg{background:var(--amb);border-color:var(--amb);color:#12161b}.chip.rubbish{background:var(--acc);border-color:var(--acc);color:#fff}.chip.elon{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.step{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.step:last-of-type{border-bottom:0}
+.step button{min-width:52px;font-size:24px;padding:0}
+.step .num{font-size:34px;min-width:44px;text-align:center}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<p id="off" class="meta"></p>
+<script>
+var S=null,view='setup',pending=null,cfg=null;
+var RN={elon:'Elon',good:'Good',avg:'Average',rubbish:'Rubbish'};
+function $(s){return document.querySelector(s)}
+function save(){try{localStorage.setItem('kt2',JSON.stringify({S:S,view:view}))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem('kt2'));if(d&&d.S){S=d.S;view=d.view||'race';var m=0;for(var id in S.karts){if(S.karts[id].rating=='bad'){S.karts[id].rating='rubbish';m=1}}if(m)S.hist=[]}}catch(e){}}
+function snap(){S.hist.push(JSON.stringify({karts:S.karts,lanes:S.lanes,log:S.log}));if(S.hist.length>40)S.hist.shift()}
+function undo(){if(!S.hist.length)return;var o=JSON.parse(S.hist.pop());S.karts=o.karts;S.lanes=o.lanes;S.log=o.log;pending=null;save();render()}
+function init(t,l,k){
+  S={cfg:{t:t,l:l},karts:{},lanes:[],log:[],hist:[]};
+  for(var j=0;j<l;j++)S.lanes.push([]);
+  for(var i=1;i<=k;i++)S.karts[i]={team:i<=t?i:null,onTrack:i<=t,rating:null};
+  var r=0;for(var n=t+1;n<=k;n++){S.lanes[r%l].push(n);r++}
+  view='rate';pending=null;cfg=null;save();render();
+}
+function kartOf(team){for(var id in S.karts){if(S.karts[id].onTrack&&S.karts[id].team==team)return +id}return null}
+function spot(k){
+  var kt=S.karts[k];if(kt.onTrack)return 'Team '+kt.team;
+  for(var i=0;i<S.lanes.length;i++){if(S.lanes[i].indexOf(k)>-1)return 'Lane '+(i+1)}
+  return ''
+}
+function pl(k,sm){return '<div class="plate num '+(S.karts[k].rating||'')+(sm?' sm':'')+'">'+k+'</div>'}
+function rl(k){var r=S.karts[k].rating;return r?'<span class="r-'+r+'">'+RN[r]+'</span>':'<span class="meta">Not rated</span>'}
+function cycle(k){var o=[null,'elon','good','avg','rubbish'],kt=S.karts[k];kt.rating=o[(o.indexOf(kt.rating)+1)%5];save();render()}
+function pit(team,lane){
+  var L=S.lanes[lane];if(!L.length)return;
+  snap();
+  var inK=kartOf(team),outK=L.shift();
+  L.push(inK);S.karts[inK].onTrack=false;S.karts[inK].team=null;
+  S.karts[outK].onTrack=true;S.karts[outK].team=team;
+  S.log.unshift({team:team,inK:inK,outK:outK,lane:lane+1,t:Date.now()});
+  pending=null;save();render();
+}
+function stepRow(key,label,note){
+  return '<div class="step"><span class="grow"><b>'+label+'</b>'+(note?'<br><span class="meta">'+note+'</span>':'')+'</span><button aria-label="Fewer '+label+'" data-st="'+key+':-1">\u2212</button><b class="num">'+cfg[key]+'</b><button aria-label="More '+label+'" data-st="'+key+':1">+</button></div>';
+}
+function render(){
+  var A=$('#app'),h='';
+  if(!S||view=='setup'){
+    if(!cfg)cfg=S?{t:S.cfg.t,l:S.cfg.l,k:Object.keys(S.karts).length}:{t:10,l:3,k:13};
+    h='<h1>Kart Tracker</h1><p class="sub">Set up the race. Each team starts in its own kart. The other karts wait in the pit lanes.</p><div class="card">'+stepRow('t','Teams','Karts on track')+stepRow('l','Pit lanes','')+stepRow('k','Total karts',(cfg.k-cfg.t)+' will wait in the pit lanes')+'</div><div class="bar"><button class="pri" id="go">'+(S?'Reset and rate karts':'Next: rate the karts')+'</button>'+(S?'<button id="cancel">Cancel</button>':'')+'</div>';
+    A.innerHTML=h;
+    A.querySelectorAll('[data-st]').forEach(function(b){b.onclick=function(){
+      var p=b.dataset.st.split(':'),d=+p[1],key=p[0];
+      cfg[key]=cfg[key]+d;
+      cfg.t=Math.min(40,Math.max(1,cfg.t));cfg.l=Math.min(6,Math.max(1,cfg.l));
+      cfg.k=Math.min(60,Math.max(cfg.t+1,cfg.k));
+      render();
+    }});
+    $('#go').onclick=function(){if(S&&!confirm('This clears the kart ratings and positions. Continue?'))return;init(cfg.t,cfg.l,cfg.k)};
+    if(S)$('#cancel').onclick=function(){view='race';cfg=null;render()};
+    return;
+  }
+  var all=Object.keys(S.karts).map(Number);
+  if(view=='rate'){
+    h='<h1>Rate the karts</h1><p class="sub">Tap a kart to rate it. Tap again to change it.</p><div class="legend"><span class="chip elon">Elon</span><span class="chip good">Good</span><span class="chip avg">Average</span><span class="chip rubbish">Rubbish</span><span class="chip">Not rated</span></div><div class="grid">';
+    all.forEach(function(k){h+='<button class="tile '+(S.karts[k].rating||'')+'" data-rate="'+k+'" aria-label="Kart '+k+', '+(S.karts[k].rating?RN[S.karts[k].rating]:'not rated')+'"><span class="num">'+k+'</span><small>'+spot(k)+'</small><small><b>'+(S.karts[k].rating?RN[S.karts[k].rating]:'')+'</b></small></button>'});
+    h+='</div><div class="bar"><button class="pri" id="start">Start race</button><button id="su">Setup</button></div>';
+    A.innerHTML=h;
+    A.querySelectorAll('[data-rate]').forEach(function(b){b.onclick=function(){cycle(+b.dataset.rate)}});
+    $('#start').onclick=function(){view='race';save();render()};
+    $('#su').onclick=function(){view='setup';cfg=null;render()};
+    return;
+  }
+  // race view
+  var sel=pending,e=S.log[0];
+  h='<div class="stick">';
+  if(sel!=null)h+='<div class="ban pick"><span><b>Team '+sel+' is pitting.</b> Tap the lane it goes into.</span><button id="pc">Cancel</button></div>';
+  else if(e)h+='<div class="ban ok"><span><b>Team '+e.team+'</b> took kart '+e.outK+' (lane '+e.lane+'). Kart '+e.inK+' waits for the next team.</span><button id="un">Undo</button></div>';
+  else h+='<div class="ban"><span>Tap the team that is pitting.</span></div>';
+  h+='</div><h2>Pit lanes</h2><div class="lanes">';
+  S.lanes.forEach(function(L,i){
+    var tg=sel!=null&&L.length;
+    h+='<div class="card lane'+(tg?' target':'')+'"'+(tg?' role="button" tabindex="0" data-lane="'+i+'" aria-label="Pit into lane '+(i+1)+' and take kart '+L[0]+'"':'')+'><h3>Lane '+(i+1)+'</h3>';
+    if(!L.length)h+='<div class="meta">Empty</div>';
+    else{
+      h+='<div class="next">'+pl(L[0])+'<div><span class="tag">Out next</span><br>'+rl(L[0])+'</div></div>';
+      if(L.length>1)h+='<div class="then"><span class="meta">Then</span>'+L.slice(1).map(function(k){return pl(k,1)}).join('')+'</div>';
+    }
+    if(tg)h+='<div class="here">Pit here</div>';
+    h+='</div>';
+  });
+  h+='</div><h2>On track</h2><div class="teams">';
+  all.filter(function(k){return S.karts[k].onTrack}).sort(function(a,b){return S.karts[a].team-S.karts[b].team}).forEach(function(k){
+    var t=S.karts[k].team;
+    h+='<button class="tm'+(sel==t?' on':'')+'" data-pit="'+t+'" aria-pressed="'+(sel==t)+'">'+pl(k)+'<span><b>Team '+t+'</b><br>'+rl(k)+'</span></button>';
+  });
+  h+='</div><div class="bar"><button id="rt">Rate karts</button><button id="su">Setup</button></div>';
+  A.innerHTML=h;
+  A.querySelectorAll('[data-pit]').forEach(function(b){b.onclick=function(){var t=+b.dataset.pit;pending=(pending==t)?null:t;render()}});
+  A.querySelectorAll('[data-lane]').forEach(function(b){
+    b.onclick=function(){pit(pending,+b.dataset.lane)};
+    b.onkeydown=function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();pit(pending,+b.dataset.lane)}};
+  });
+  var pc=$('#pc');if(pc)pc.onclick=function(){pending=null;render()};
+  var un=$('#un');if(un)un.onclick=undo;
+  $('#rt').onclick=function(){view='rate';pending=null;save();render()};
+  $('#su').onclick=function(){view='setup';cfg=null;render()};
+}
+load();render();
+var wl=null;
+function wake(){try{if(navigator.wakeLock){navigator.wakeLock.request('screen').then(function(l){wl=l}).catch(function(){})}}catch(e){}}
+wake();
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')wake()});
+(function(){
+  var o=document.getElementById('off');
+  function set(t){if(o)o.textContent=t}
+  if(!('serviceWorker' in navigator)){set('Offline mode is not available in this browser.');return}
+  navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(){set('Ready for offline use. Ratings are saved on this device.')}).catch(function(){set('Not saved for offline yet. Open this page once with wifi.')});
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+})();
+</script>
+</body>
+</html>
