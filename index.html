@@ -51,7 +51,8 @@ button:focus-visible,.lane:focus-visible{outline:3px solid var(--acc);outline-of
 .lane h3{margin:0 0 8px;font-size:15px;color:var(--mut);font-weight:600}
 .lane.target{border:3px solid var(--acc);cursor:pointer}
 .next{display:flex;gap:10px;align-items:center}
-.then{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.then{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-top:10px}
+.mini{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:58px;font-size:13px;line-height:1.1}
 .here{margin-top:10px;text-align:center;background:var(--acc);color:#fff;border-radius:8px;padding:8px;font-weight:700}
 .teams{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .tm{display:flex;align-items:center;gap:10px;text-align:left;padding:8px 10px;min-height:64px}
@@ -65,6 +66,22 @@ button:focus-visible,.lane:focus-visible{outline:3px solid var(--acc);outline-of
 .chip{padding:4px 10px;border-radius:99px;font-size:13px;font-weight:600;border:2px solid var(--line)}
 .chip.good{background:var(--go);border-color:var(--go);color:#fff}.chip.avg{background:var(--amb);border-color:var(--amb);color:#12161b}.chip.rubbish{background:var(--acc);border-color:var(--acc);color:#fff}.chip.elon{background:#7c3aed;border-color:#7c3aed;color:#fff}
 .step{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:18px}
+.hrow h2{margin:0}
+.hrow button{min-height:42px;padding:4px 14px}
+[data-rk]{cursor:pointer;outline:3px dashed var(--acc);outline-offset:2px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet .box{background:var(--card);border-radius:14px;padding:16px;width:100%;max-width:420px;max-height:100%;overflow:auto}
+.sheet h3{margin:0;font-size:26px;font-family:"Avenir Next Condensed","Arial Narrow",Arial,sans-serif}
+.opt{display:block;width:100%;margin-top:8px;min-height:58px;font-size:20px;font-weight:700;text-align:left;border:3px solid var(--line)}
+.opt.elon{background:#7c3aed;border-color:#7c3aed;color:#fff}.opt.good{background:var(--go);border-color:var(--go);color:#fff}.opt.avg{background:var(--amb);border-color:var(--amb);color:#12161b}.opt.rubbish{background:var(--acc);border-color:var(--acc);color:#fff}
+.opt.cur{outline:4px solid var(--fg);outline-offset:2px}
+.swrow{display:flex;justify-content:center;margin-bottom:14px}
+.swrow .plate{min-width:72px;font-size:40px;padding:10px 8px}
+.sw{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.swb{min-height:64px;border-radius:12px;border:3px solid var(--line);padding:0}
+.swb.elon{background:#7c3aed;border-color:#7c3aed}.swb.good{background:var(--go);border-color:var(--go)}.swb.avg{background:var(--amb);border-color:var(--amb)}.swb.rubbish{background:var(--acc);border-color:var(--acc)}.swb.none{background:var(--plate)}
+.swb.cur{outline:4px solid var(--fg);outline-offset:2px}
 .step:last-of-type{border-bottom:0}
 .step button{min-width:52px;font-size:24px;padding:0}
 .step .num{font-size:34px;min-width:44px;text-align:center}
@@ -74,19 +91,19 @@ button:focus-visible,.lane:focus-visible{outline:3px solid var(--acc);outline-of
 <div id="app"></div>
 <p id="off" class="meta"></p>
 <script>
-var S=null,view='setup',pending=null,cfg=null;
+var S=null,view='setup',pending=null,cfg=null,editing=false,rateK=null;
 var RN={elon:'Elon',good:'Good',avg:'Average',rubbish:'Rubbish'};
 function $(s){return document.querySelector(s)}
 function save(){try{localStorage.setItem('kt2',JSON.stringify({S:S,view:view}))}catch(e){}}
 function load(){try{var d=JSON.parse(localStorage.getItem('kt2'));if(d&&d.S){S=d.S;view=d.view||'race';var m=0;for(var id in S.karts){if(S.karts[id].rating=='bad'){S.karts[id].rating='rubbish';m=1}}if(m)S.hist=[]}}catch(e){}}
 function snap(){S.hist.push(JSON.stringify({karts:S.karts,lanes:S.lanes,log:S.log}));if(S.hist.length>40)S.hist.shift()}
-function undo(){if(!S.hist.length)return;var o=JSON.parse(S.hist.pop());S.karts=o.karts;S.lanes=o.lanes;S.log=o.log;pending=null;save();render()}
+function undo(){if(!S.hist.length)return;var cur=S.karts,o=JSON.parse(S.hist.pop());S.karts=o.karts;S.lanes=o.lanes;S.log=o.log;for(var id in S.karts){if(cur[id])S.karts[id].rating=cur[id].rating}pending=null;save();render()}
 function init(t,l,k){
   S={cfg:{t:t,l:l},karts:{},lanes:[],log:[],hist:[]};
   for(var j=0;j<l;j++)S.lanes.push([]);
   for(var i=1;i<=k;i++)S.karts[i]={team:i<=t?i:null,onTrack:i<=t,rating:null};
   var r=0;for(var n=t+1;n<=k;n++){S.lanes[r%l].push(n);r++}
-  view='rate';pending=null;cfg=null;save();render();
+  view='rate';pending=null;cfg=null;editing=false;rateK=null;save();render();
 }
 function kartOf(team){for(var id in S.karts){if(S.karts[id].onTrack&&S.karts[id].team==team)return +id}return null}
 function spot(k){
@@ -94,7 +111,7 @@ function spot(k){
   for(var i=0;i<S.lanes.length;i++){if(S.lanes[i].indexOf(k)>-1)return 'Lane '+(i+1)}
   return ''
 }
-function pl(k,sm){return '<div class="plate num '+(S.karts[k].rating||'')+(sm?' sm':'')+'">'+k+'</div>'}
+function pl(k,sm){return '<div class="plate num '+(S.karts[k].rating||'')+(sm?' sm':'')+'"'+(editing?' data-rk="'+k+'" role="button" tabindex="0" aria-label="Change rating of kart '+k+'"':'')+'>'+k+'</div>'}
 function rl(k){var r=S.karts[k].rating;return r?'<span class="r-'+r+'">'+RN[r]+'</span>':'<span class="meta">Not rated</span>'}
 function cycle(k){var o=[null,'elon','good','avg','rubbish'],kt=S.karts[k];kt.rating=o[(o.indexOf(kt.rating)+1)%5];save();render()}
 function pit(team,lane){
@@ -140,16 +157,17 @@ function render(){
   // race view
   var sel=pending,e=S.log[0];
   h='<div class="stick">';
-  if(sel!=null)h+='<div class="ban pick"><span><b>Team '+sel+' is pitting.</b> Tap the lane it goes into.</span><button id="pc">Cancel</button></div>';
+  if(editing)h+='<div class="ban pick"><span><b>Edit colors.</b> Tap a kart.</span><button data-ed="1">Done</button></div>';
+  else if(sel!=null)h+='<div class="ban pick"><span><b>Team '+sel+' is pitting.</b> Tap the lane it goes into.</span><button id="pc">Cancel</button></div>';
   else if(e)h+='<div class="ban ok"><span><b>Team '+e.team+'</b> took kart '+e.outK+' (lane '+e.lane+'). Kart '+e.inK+' waits for the next team.</span><button id="un">Undo</button></div>';
   else h+='<div class="ban"><span>Tap the team that is pitting.</span></div>';
-  h+='</div><h2>Pit lanes</h2><div class="lanes">';
+  h+='</div><div class="hrow"><h2>Pit lanes</h2><button data-ed="1">'+(editing?'Done':'Edit colors')+'</button></div><div class="lanes" style="margin-top:8px">';
   S.lanes.forEach(function(L,i){
-    var tg=sel!=null&&L.length;
+    var tg=sel!=null&&L.length&&!editing;
     h+='<div class="card lane'+(tg?' target':'')+'"'+(tg?' role="button" tabindex="0" data-lane="'+i+'" aria-label="Pit into lane '+(i+1)+' and take kart '+L[0]+'"':'')+'><h3>Lane '+(i+1)+'</h3>';
     if(!L.length)h+='<div class="meta">Empty</div>';
     else{
-      h+='<div class="next">'+pl(L[0])+'<div><span class="tag">Out next</span><br>'+rl(L[0])+'</div></div>';
+      h+='<div class="next">'+pl(L[0])+'<div><span class="tag">Out next</span></div></div>';
       if(L.length>1)h+='<div class="then"><span class="meta">Then</span>'+L.slice(1).map(function(k){return pl(k,1)}).join('')+'</div>';
     }
     if(tg)h+='<div class="here">Pit here</div>';
@@ -158,18 +176,29 @@ function render(){
   h+='</div><h2>On track</h2><div class="teams">';
   all.filter(function(k){return S.karts[k].onTrack}).sort(function(a,b){return S.karts[a].team-S.karts[b].team}).forEach(function(k){
     var t=S.karts[k].team;
-    h+='<button class="tm'+(sel==t?' on':'')+'" data-pit="'+t+'" aria-pressed="'+(sel==t)+'">'+pl(k)+'<span><b>Team '+t+'</b><br>'+rl(k)+'</span></button>';
+    h+='<button class="tm'+(sel==t?' on':'')+'" data-pit="'+t+'" aria-pressed="'+(sel==t)+'">'+pl(k)+'<span><b>Team '+t+'</b></span></button>';
   });
   h+='</div><div class="bar"><button id="rt">Rate karts</button><button id="su">Setup</button></div>';
+  if(rateK!=null){
+    var cr=S.karts[rateK].rating||'';
+    h+='<div class="sheet"><div class="box" role="dialog" aria-label="Pick a color for kart '+rateK+'"><div class="swrow"><div class="plate num '+cr+'">'+rateK+'</div></div><div class="sw">'+['elon','good','avg','rubbish',''].map(function(r){return '<button class="swb '+(r||'none')+(cr==r?' cur':'')+'" data-set="'+r+'" aria-label="'+(r?RN[r]:'No color')+'"></button>'}).join('')+'</div><button id="rc" style="width:100%;margin-top:12px">Cancel</button></div></div>';
+  }
   A.innerHTML=h;
-  A.querySelectorAll('[data-pit]').forEach(function(b){b.onclick=function(){var t=+b.dataset.pit;pending=(pending==t)?null:t;render()}});
+  A.querySelectorAll('[data-pit]').forEach(function(b){b.onclick=function(){if(editing){rateK=kartOf(+b.dataset.pit);render();return}var t=+b.dataset.pit;pending=(pending==t)?null:t;render()}});
   A.querySelectorAll('[data-lane]').forEach(function(b){
     b.onclick=function(){pit(pending,+b.dataset.lane)};
     b.onkeydown=function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();pit(pending,+b.dataset.lane)}};
   });
   var pc=$('#pc');if(pc)pc.onclick=function(){pending=null;render()};
   var un=$('#un');if(un)un.onclick=undo;
-  $('#rt').onclick=function(){view='rate';pending=null;save();render()};
+  A.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(){editing=!editing;pending=null;rateK=null;render()}});
+  A.querySelectorAll('[data-rk]').forEach(function(b){
+    var f=function(ev){ev.stopPropagation();rateK=+b.dataset.rk;render()};
+    b.onclick=f;b.onkeydown=function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();f(ev)}};
+  });
+  A.querySelectorAll('[data-set]').forEach(function(b){b.onclick=function(){S.karts[rateK].rating=b.dataset.set||null;rateK=null;save();render()}});
+  var rc=$('#rc');if(rc)rc.onclick=function(){rateK=null;render()};
+  $('#rt').onclick=function(){view='rate';pending=null;editing=false;rateK=null;save();render()};
   $('#su').onclick=function(){view='setup';cfg=null;render()};
 }
 load();render();
@@ -181,7 +210,7 @@ document.addEventListener('visibilitychange',function(){if(document.visibilitySt
   var o=document.getElementById('off');
   function set(t){if(o)o.textContent=t}
   if(!('serviceWorker' in navigator)){set('Offline mode is not available in this browser.');return}
-  navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(){set('Ready for offline use. Ratings are saved on this device.')}).catch(function(){set('Not saved for offline yet. Open this page once with wifi.')});
+  navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(){set('Version 3. Ready for offline use. Ratings are saved on this device.')}).catch(function(){set('Version 3. Not saved for offline yet. Open this page once with wifi.')});
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 })();
 </script>
